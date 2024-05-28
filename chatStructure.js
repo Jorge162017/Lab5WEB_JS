@@ -7,12 +7,15 @@ document.addEventListener('DOMContentLoaded', () => {
     chatContainer.style.justifyContent = 'space-between';
     chatContainer.style.width = '100%';
     chatContainer.style.height = '100vh'; // Ajustar a la altura de la ventana
+    chatContainer.style.borderRadius = '20px';
 
     // Crear contenedor de lista de chats
     const chatListContainer = document.createElement('div');
     chatListContainer.style.width = '30%';
     chatListContainer.style.backgroundColor = 'rgb(233, 236, 239)';
-    chatListContainer.innerText = 'CHATS'; // Placeholder
+    chatListContainer.style.borderRadius = '20px';
+    chatListContainer.style.overflow = 'auto';
+    
 
     // Función para agregar chats a la lista
     function agregarChatALaLista(nombre, imagenUrl) {
@@ -46,21 +49,46 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Datos de ejemplo para los chats
-    const datosChats = [
-        { nombre: "Spike", imagenUrl: "spike.jpeg" },
-        { nombre: "Stu", imagenUrl: "stu.jpeg" },
-        { nombre: "Jessie", imagenUrl: "jessie.jpeg" },
-        { nombre: "Leon", imagenUrl: "leon.jpeg" },
-        { nombre: "Pam", imagenUrl: "pam.jpeg" },
-        { nombre: "Dynamike", imagenUrl: "dynamike.jpeg" },
-        { nombre: "Penny", imagenUrl: "pennie.jpeg" }
+    // Datos para los chats
+    const listaChats = [
+        { nombre: " ", imagenUrl: "img.jpeg" },
     ];
 
     // Añadir los chats a la lista
-    datosChats.forEach(chat => {
+    listaChats.forEach(chat => {
         agregarChatALaLista(chat.nombre, chat.imagenUrl);
     });
+
+    // Función para obtener la lista de usuarios del chat
+    function obtenerUsuariosDelChat() {
+        fetch('http://uwu-guate.site:3000/messages')
+            .then(response => response.json())
+            .then(data => {
+                // Crear un conjunto para almacenar nombres de usuario únicos
+                const usuariosUnicos = new Set();
+            
+             // Asumiendo que cada mensaje tiene una estructura como [id, username, message, create_date]
+                data.forEach(mensaje => {
+                    usuariosUnicos.add(mensaje.username); // Añadir el username al conjunto
+                });
+
+            // Convertir el conjunto a un arreglo para su manejo
+                const usuariosDelChat = Array.from(usuariosUnicos).map(username => {
+                    return { nombre: username, imagenUrl: "img.jpeg" }; // Usar una imagen genérica para todos
+                });
+
+            // Limpiar la lista de chats antes de añadir los nuevos
+                chatListContainer.innerHTML = '';
+
+            // Añadir los chats a la lista
+                usuariosDelChat.forEach(chat => {
+                    agregarChatALaLista(chat.nombre, chat.imagenUrl);
+                });
+            })
+            .catch(error => console.error('Error al obtener usuarios del chat:', error));
+    }
+    obtenerUsuariosDelChat(); // Obtener los usuarios al cargar la página
+
 
     // Crear contenedor del chat actual
     const currentChatContainer = document.createElement('div');
@@ -72,20 +100,35 @@ document.addEventListener('DOMContentLoaded', () => {
     chatHeader.style.backgroundColor = 'rgb(108, 117, 125)';
     chatHeader.style.padding = '20px';
     chatHeader.style.display = 'flex';
-    chatHeader.style.justifyContent = 'space-between';
+    chatHeader.style.justifyContent = 'space-evenly';
     chatHeader.style.alignItems = 'center';
     chatHeader.style.fontSize = '20px';
     chatHeader.style.fontWeight = 'bold';
+    chatHeader.style.borderRadius = '20px 20px 0 0';
 
     // Crear un elemento para el título del chat
     const chatHeaderTitle = document.createElement('span');
-    chatHeaderTitle.innerText = 'Nombre del Chat'; // Placeholder para el título
+    chatHeaderTitle.innerText = 'Chat Server'; // Placeholder para el título
     chatHeader.appendChild(chatHeaderTitle);
+
+    //filter de mensajes
+    var inputSearch = document.createElement('input');
+    inputSearch.id = 'inputSearch';
+    inputSearch.type = 'text';
+    inputSearch.placeholder = 'Buscar mensaje';
+    inputSearch.style.padding = '10px';
+    inputSearch.style.borderRadius = '10px';
+    inputSearch.style.border = '1px solid #ccc';
+    inputSearch.style.width = '200px';
+    inputSearch.style.backgroundColor = 'rgb(173, 181, 189)';
+    chatHeader.appendChild(inputSearch);
+
 
     // Botón para cambiar el modo
     const modeToggleButton = document.createElement('button');
     modeToggleButton.innerText = 'Modo Oscuro';
     modeToggleButton.style.padding = '10px';
+    modeToggleButton.style.borderRadius = '10px';
     chatHeader.appendChild(modeToggleButton); // Añadir el botón al encabezado del chat
 
     // Crear área del chat
@@ -93,13 +136,14 @@ document.addEventListener('DOMContentLoaded', () => {
     chatArea.style.flexGrow = '1';
     chatArea.style.backgroundColor = 'rgb(248, 249, 250)';
     chatArea.style.overflow = 'auto';
-    chatArea.innerText = ' '; // Placeholder
+  
 
     // Crear área de entrada para mensajes
     const messageInputArea = document.createElement('div');
     messageInputArea.style.display = 'flex';
     messageInputArea.style.padding = '30px';
     messageInputArea.style.backgroundColor = 'rgb(108, 117, 125)';
+    messageInputArea.style.borderRadius = '0 0 20px 20px';
 
     const messageInput = document.createElement('textarea');
     messageInput.placeholder = 'Escribe un mensaje';
@@ -108,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
     messageInput.style.resize = 'none';
     messageInput.style.padding = '10px';
     messageInput.style.border = '1px solid #ccc';
-    messageInput.style.borderRadius = '4px';
+    messageInput.style.borderRadius = '10px';
     messageInput.style.height = '30px';
     messageInput.maxLength = 140;
 
@@ -122,29 +166,164 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sendButton = document.createElement('button');
     sendButton.innerText = 'Enviar';
+    sendButton.style.borderRadius= '10px';
     sendButton.onclick = function() {
         console.log('Mensaje enviado:', messageInput.value);
         messageInput.value = ''; // Limpiar el campo después de enviar
     };
 
+    obtenerMensajes(); // Llamar a la función para cargar mensajes al cargar la página
+    
+
     // Función para enviar mensajes
     function enviarMensaje() {
-        if (messageInput.value.trim() !== '') {
-            const mensaje = document.createElement('div');
-            mensaje.innerText = messageInput.value;
-            mensaje.className = 'mensaje';
-            mensaje.style.padding = '10px';
-            mensaje.style.margin = '5px 0';
-            mensaje.style.borderRadius = '10px';
-            mensaje.style.backgroundColor = 'rgb(202, 240, 248)';
-            chatArea.appendChild(mensaje);
-            chatArea.scrollTop = chatArea.scrollHeight;
-            mensaje.style.textAlign = 'right';
-            mensaje.style.marginLeft = '10px';
-            mensaje.style.marginRight = '10px';
-            messageInput.value = '';
+    if (messageInput.value.trim() !== '') {
+        const mensajeParaEnviar = {
+            username: "JorgeLopez", // username 
+            message: messageInput.value
+        };
+
+        // Enviar el mensaje al servidor
+        fetch('http://uwu-guate.site:3000/messages', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(mensajeParaEnviar)
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Mensaje enviado:', data);
+            obtenerMensajes(); // Obtener los mensajes actualizados después de enviar uno nuevo
+        })
+        .catch(error => console.error('Error al enviar mensaje:', error));
+
+        // Agregar visualmente el mensaje al chat
+        const mensaje = document.createElement('div');
+        mensaje.innerText = messageInput.value;
+        mensaje.className = 'mensaje';
+        mensaje.style.padding = '10px';
+        mensaje.style.margin = '5px 0';
+        mensaje.style.borderRadius = '10px';
+        mensaje.style.backgroundColor = 'rgb(202, 240, 248)';
+        mensaje.style.textAlign = 'right';
+        mensaje.style.marginLeft = '10px';
+        mensaje.style.marginRight = '10px';
+        chatArea.appendChild(mensaje);
+        chatArea.scrollTop = chatArea.scrollHeight;
+
+        // Limpiar el campo de entrada
+        messageInput.value = '';
         }
     }
+
+    var chatsObject = [];
+
+    function obtenerMensajes() {
+        const usuarios = new Set(); // Para almacenar usuarios únicos
+        fetch('http://uwu-guate.site:3000/messages')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`Error de red: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Limpiar el área de chat antes de mostrar los mensajes nuevos
+                chatArea.innerHTML = '';
+    
+                // Llamar a la función para crear los elementos de mensaje para cada mensaje en el orden dado
+                data.forEach(mensaje => {
+                    crearElementoMensaje(mensaje);
+                });
+                chatsObject = data;
+                chatArea.scrollTop = chatArea.scrollHeight; // Desplazar al final del área de chat
+            })
+            .catch(error => console.error('Error al obtener mensajes:', error));
+    }
+    
+    function crearElementoMensaje(mensaje) {
+        const mensajeDiv = document.createElement('div');
+        mensajeDiv.className = 'mensaje';
+        mensajeDiv.style.padding = '10px';
+        mensajeDiv.style.margin = '5px 0';
+        mensajeDiv.style.borderRadius = '10px';
+        mensajeDiv.style.marginLeft = '10px';
+        mensajeDiv.style.marginRight = '10px';
+        mensajeDiv.style.wordWrap = 'break-word';
+    
+        const username = mensaje.username;
+        const message = mensaje.content;
+    
+        // Distinguir si el mensaje es del usuario actual o de otro
+        if (username === "JorgeLopez") {
+            mensajeDiv.style.backgroundColor = 'rgb(202, 240, 248)';
+            mensajeDiv.style.textAlign = 'right';
+        } else {
+            mensajeDiv.style.backgroundColor = 'rgb(183, 239, 197)';
+            mensajeDiv.style.textAlign = 'left';
+        }
+    
+        // Comprobar si el mensaje es un enlace a una imagen
+        if (isImageLink(message)) {
+            const imageElement = document.createElement('img');
+            imageElement.src = message;
+            imageElement.style.maxWidth = '100%';
+            imageElement.style.height = 'auto';
+            mensajeDiv.appendChild(imageElement);
+        } else {
+            mensajeDiv.innerHTML = `<strong>${username}:</strong> ${message}`;
+        }
+    
+        chatArea.appendChild(mensajeDiv);
+    }
+    
+    function isImageLink(text) {
+        return /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i.test(text);
+    }
+
+
+    function filtrarChats(busqueda) {
+        return chatsObject.filter(chat => chat.content.toLowerCase().includes(busqueda.toLowerCase()));
+    }
+
+    
+
+    // Define el intervalo en milisegundos (por ejemplo, cada 5 segundos)
+    const intervaloActualizacion = 5000; // 5000 milisegundos = 5 segundos
+
+    // Llama a obtenerMensajes() inicialmente para mostrar los mensajes cuando se carga la página
+    obtenerMensajes();
+
+    // Configura setInterval para llamar a obtenerMensajes() en intervalos regulares
+    const actualizarChatInterval = setInterval(obtenerMensajes, intervaloActualizacion);
+
+    
+    function isImageLink(text) {
+        return /\.(gif|jpe?g|tiff?|png|webp|bmp)$/i.test(text);
+    }
+    
+    // Llamar a obtenerMensajes al cargar la página o según tu lógica de aplicación
+    obtenerMensajes();
+
+    // Función para mostrar la lista de usuarios
+    function mostrarUsuarios(listaDeUsuarios) {
+        const listaUsuariosContainer = document.createElement('div');
+        listaUsuariosContainer.style.padding = '10px';
+        listaUsuariosContainer.style.backgroundColor = 'rgb(255, 255, 255)';
+        listaUsuariosContainer.style.borderRadius = '20px';
+        listaUsuariosContainer.style.marginTop = '20px';
+        listaUsuariosContainer.innerHTML = '<strong>Usuarios en el chat:</strong>';
+
+        listaDeUsuarios.forEach(usuario => {
+            const usuarioDiv = document.createElement('div');
+            usuarioDiv.innerText = usuario;
+            usuarioDiv.style.padding = '5px 0';
+            listaUsuariosContainer.appendChild(usuarioDiv);
+        });
+
+        currentChatContainer.appendChild(listaUsuariosContainer);
+}
 
     // Eventos para enviar mensaje
     sendButton.onclick = enviarMensaje;
@@ -162,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Estructurar los contenedores
     currentChatContainer.appendChild(chatHeader);
     currentChatContainer.appendChild(chatArea);
-    currentChatContainer.appendChild(messageInputArea); // Añadir el área de entrada al final
+    currentChatContainer.appendChild(messageInputArea); 
     chatContainer.appendChild(chatListContainer);
     chatContainer.appendChild(currentChatContainer);
 
@@ -216,6 +395,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Evento de clic para el botón de cambio de modo
     modeToggleButton.addEventListener('click', toggleMode);
+
+    inputSearch.addEventListener('input', function(e) {
+        const busqueda = inputSearch.value.trim().toLowerCase();
+        const chatsFiltrados = filtrarChats(busqueda);
+        console.log('busqueda:', busqueda);
+        chatArea.innerHTML = '';
+        chatsFiltrados.forEach(chat => {
+            crearElementoMensaje(chat)
+        }); 
+    });
 });
+
 
 
